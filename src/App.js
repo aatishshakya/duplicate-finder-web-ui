@@ -4,6 +4,7 @@ import ColumnSelector from './components/ColumnSelector';
 import ActionConfigurator from './components/ActionConfigurator';
 import "monday-ui-react-core/tokens";
 import { postData } from './helper/httpHelper';
+import { Loader } from 'monday-ui-react-core';
 
 const monday = mondaySdk();
 
@@ -13,11 +14,11 @@ function DuplicateDetectorConfig() {
   const [boardId, setBoardId] = useState('');
   const [selectedColumns, setSelectedColumns] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     monday.listen('context', (res) => {
       const { boardId } = res.data;
-      console.log('the board id is:', boardId);
       setBoardId(boardId);
       fetchColumns(boardId);
       fetchGroups(boardId);
@@ -71,13 +72,15 @@ function DuplicateDetectorConfig() {
       groupId: selectedGroup.id,
       columnIds: selectedColumns,
     };
-    console.log(inputData);
+
     const url = 'https://966795a90b03.apps-tunnel.monday.com/create-duplicates';
     try {
-      const result = await postData(url, inputData);
-      console.log(result); // Process result here
+      setIsLoading(true);
+      await postData(url, inputData);
     } catch (error) {
       console.error('Request failed', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -85,7 +88,7 @@ function DuplicateDetectorConfig() {
     <div>
       <ColumnSelector columns={columns} selectedColumns={selectedColumns} onColumnChange={handleColumnChange} />
       <ActionConfigurator groups={groups} selectedGroup={selectedGroup} onActionsChange={handleActionsChange} />
-      <button onClick={saveConfiguration}>Save Configuration</button>
+      <button disabled={(selectedGroup === '' && !selectedColumns.length) ? true : false} onClick={saveConfiguration}>{isLoading ? <Loader size={40} /> : "Save Configuration"}</button>
     </div>
   );
 }
