@@ -15,6 +15,7 @@ function DuplicateDetectorConfig() {
   const [selectedColumns, setSelectedColumns] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [responseStatus, setResponseStatus] = useState(false);
 
   useEffect(() => {
     monday.listen('context', (res) => {
@@ -26,12 +27,14 @@ function DuplicateDetectorConfig() {
   }, []);
 
   const handleColumnChange = (newSelection) => {
+    setResponseStatus(false);
     if (!selectedColumns.includes(newSelection)) {
       setSelectedColumns([...selectedColumns, newSelection]);
     }
   };
 
   const handleActionsChange = (newSelection) => {
+    setResponseStatus(false);
     setSelectedGroup(newSelection);
   };
 
@@ -77,7 +80,9 @@ function DuplicateDetectorConfig() {
     try {
       setIsLoading(true);
       await postData(url, inputData);
+      setResponseStatus(true);
     } catch (error) {
+      setResponseStatus(false);
       console.error('Request failed', error);
     } finally {
       setIsLoading(false);
@@ -88,7 +93,15 @@ function DuplicateDetectorConfig() {
     <div>
       <ColumnSelector columns={columns} selectedColumns={selectedColumns} onColumnChange={handleColumnChange} />
       <ActionConfigurator groups={groups} selectedGroup={selectedGroup} onActionsChange={handleActionsChange} />
-      <button disabled={(selectedGroup === '' && !selectedColumns.length) ? true : false} onClick={saveConfiguration}>{isLoading ? <Loader size={40} /> : "Save Configuration"}</button>
+      <button
+        disabled={(selectedGroup === '' || !selectedColumns.length || isLoading)
+          ? true : false}
+        onClick={saveConfiguration}>{isLoading
+          ? <Loader size={40} />
+          : responseStatus
+            ? "Saved" :
+            "Save Configuration"}
+      </button>
     </div>
   );
 }
